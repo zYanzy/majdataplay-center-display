@@ -1,8 +1,10 @@
-# 部署指南：在另一台电脑上只安装 Fault 计数器
+# 部署指南：安装中心显示项 —— Fault 计数器
 
 > 本文件供 AI Agent 阅读执行。请严格按顺序操作，**任何一步校验失败就停止并向用户报告**，不要猜测、不要跳过、不要强行写入程序集。
 >
-> 本指南**只装 Fault 计数器**，不会改动倒计时显示项或传感器高亮颜色。同仓库新增的倒计时补丁见 `INSTALL-COUNTDOWN.md`；传感器配色工具见 `majdataplay-sensor-color` 仓库的 INSTALL.md。三份补丁可任意顺序叠加。
+> 本仓库是 **MajdataPlay 中心显示扩展**：通过追加 `BGInfoOption` 枚举值，给 HUD 的三个中心信息显示位添加自定义显示项（概念与三个显示位见 `README.md` 的「什么是中心显示」）。本指南**只装其中的 Fault 计数器**，不会改动倒计时显示项或传感器高亮颜色。
+>
+> 同仓库的倒计时补丁见 `INSTALL-COUNTDOWN.md`；传感器配色工具见 `majdataplay-sensor-color` 仓库的 INSTALL.md。三份补丁彼此独立，可只装任意一个、也可按任意顺序叠加。
 
 ## 1. 适用范围（硬性前提）
 
@@ -29,7 +31,7 @@
 **方式 A — 公开仓库（推荐）**
 
 ```bash
-git clone https://github.com/zYanzy/majdataplay-fault-counter.git
+git clone https://github.com/zYanzy/majdataplay-center-display.git
 ```
 
 仓库**不含** `engine/`（编译产物被 `.gitignore` 排除），必须执行第 4 步构建。
@@ -92,9 +94,9 @@ dotnet "<TOOL_DIR>\engine\patcher.dll" "%DLL%" --inspect
 
 最后一行必须输出 `{"hasFault":true}`。Git Bash 下把 `copy /Y` 换成 `cp -f`。
 
-## 7. 让功能在游戏里可见（改 `settings.json`，改前先备份）
+## 7. 把 Fault 选到中心显示位（改 `settings.json`，改前先备份）
 
-只改这几个键，其余内容一律保留：
+三个中心显示位 `Game.BGInfo` / `Game.SecondaryBGInfo` / `Game.SubScreenBGInfo` 可任选其一，值用字符串枚举名。只改这几个键，其余内容一律保留：
 
 | 路径 | 值 | 说明 |
 | --- | --- | --- |
@@ -107,7 +109,7 @@ dotnet "<TOOL_DIR>\engine\patcher.dll" "%DLL%" --inspect
 ## 8. 验收
 
 1. 手动双击 `MajdataPlay.exe` 启动游戏（**不要**由 Agent 的命令会话启动，进程常被回收且容易双开抢串口/音频），进入任意谱面。
-2. 信息位显示 `Fault`，初始 0；出现 GREAT / GOOD / MISS 时每次 -1；Perfect 与 TooFast 不变。
+2. 所选中心显示位显示 `Fault`，初始 0；出现 GREAT / GOOD / MISS 时每次 -1；Perfect 与 TooFast 不变。
 3. 游戏日志中无 `InvalidProgramException` / `BadImageFormatException` / 程序集加载失败。
 4. `MaiCharts/`、`Skins/`、`MajScores.db` 未被改动。
 5. 传感器高亮仍为官方原版灰（本补丁不碰颜色）——这正好证明两个功能彼此独立。
@@ -135,8 +137,8 @@ py -3 "<TOOL_DIR>\restore.py" "<GAME_DIR>" --dll "<你的官方原版 Assembly-C
 
 | 补丁 | 位置 | `--inspect` |
 | --- | --- | --- |
-| **Fault 计数器**（本指南） | `engine-src/` + `apply_fault.py` | `{"hasFault":bool}` |
-| 倒计时显示项 | 同仓库 `countdown-src/` + `apply_countdown.py`，详见 `INSTALL-COUNTDOWN.md` | `{"hasCountdown":bool}` |
+| **Fault 显示项**（本指南） | 本仓库 `engine-src/` + `apply_fault.py` | `{"hasFault":bool}` |
+| 倒计时显示项 | 本仓库 `countdown-src/` + `apply_countdown.py`，详见 `INSTALL-COUNTDOWN.md` | `{"hasCountdown":bool}` |
 | 传感器配色 | `majdataplay-sensor-color` 独立仓库 | `{"r","g","b","a"}` |
 
 倒计时与 Fault 都往 `ObjectCounter.UpdateInfoDisplayerOutput` / `SetInfoDisplayerInitText` 开头插入判断块，但两块都用「不匹配就跳到**当前第一条指令**」的写法，因此后装的块会自然链接到先装的块，**任意安装顺序都能同时生效**。传感器配色补丁只改 `DummyTouchPanelRenderer.OnPreUpdate()` 的 4 个颜色常量，与两者完全无交集。
