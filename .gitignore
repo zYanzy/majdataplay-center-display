@@ -1,5 +1,6 @@
 # Build output and third-party binaries (restore with `dotnet build`)
 engine/
+countdown-engine/
 bin/
 obj/
 *.dll

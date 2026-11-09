@@ -2,7 +2,7 @@
 
 > 本文件供 AI Agent 阅读执行。请严格按顺序操作，**任何一步校验失败就停止并向用户报告**，不要猜测、不要跳过、不要强行写入程序集。
 >
-> 本指南**只装 Fault 计数器**，不会改动传感器高亮颜色。若用户还要自定义高亮色，另见 `majdataplay-sensor-color` 仓库的 INSTALL.md；两份补丁可任意顺序叠加。
+> 本指南**只装 Fault 计数器**，不会改动倒计时显示项或传感器高亮颜色。同仓库新增的倒计时补丁见 `INSTALL-COUNTDOWN.md`；传感器配色工具见 `majdataplay-sensor-color` 仓库的 INSTALL.md。三份补丁可任意顺序叠加。
 
 ## 1. 适用范围（硬性前提）
 
@@ -133,4 +133,12 @@ py -3 "<TOOL_DIR>\restore.py" "<GAME_DIR>" --dll "<你的官方原版 Assembly-C
 
 ## 11. 与其他补丁叠加
 
-传感器配色补丁是**另一个独立仓库**，其引擎只改 `DummyTouchPanelRenderer.OnPreUpdate()` 的 4 个颜色常量。两者可任意顺序安装、互不覆盖；官方更新后需各自重新应用一次。
+| 补丁 | 位置 | `--inspect` |
+| --- | --- | --- |
+| **Fault 计数器**（本指南） | `engine-src/` + `apply_fault.py` | `{"hasFault":bool}` |
+| 倒计时显示项 | 同仓库 `countdown-src/` + `apply_countdown.py`，详见 `INSTALL-COUNTDOWN.md` | `{"hasCountdown":bool}` |
+| 传感器配色 | `majdataplay-sensor-color` 独立仓库 | `{"r","g","b","a"}` |
+
+倒计时与 Fault 都往 `ObjectCounter.UpdateInfoDisplayerOutput` / `SetInfoDisplayerInitText` 开头插入判断块，但两块都用「不匹配就跳到**当前第一条指令**」的写法，因此后装的块会自然链接到先装的块，**任意安装顺序都能同时生效**。传感器配色补丁只改 `DummyTouchPanelRenderer.OnPreUpdate()` 的 4 个颜色常量，与两者完全无交集。
+
+三者针对同一版本 DLL；官方更新后需各自重新应用一次，不要为了"恢复"用官方原版 DLL 整体覆盖运行包。
